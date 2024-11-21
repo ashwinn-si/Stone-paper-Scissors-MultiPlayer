@@ -16,7 +16,7 @@ const GameSchema = new mongoose.Schema({
     roomID: Number,
     player1Name: String,
     player2Name: String,
-    totalRound : Number,//!needed to change
+    totalRound : Number,
     gameStart: String, //tells if the game is start or not
     currRound : Number, 
     player1Score: Number,
@@ -26,7 +26,7 @@ const GameSchema = new mongoose.Schema({
 });
 
 
-const Game = mongoose.model("UserDetails", GameSchema);
+const Game = mongoose.model("testing", GameSchema);
 
 
 module.exports = Game;

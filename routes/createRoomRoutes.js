@@ -4,13 +4,15 @@ const router = express.Router();
 
 const Game = require("../models/game");
 
-let allDetails ={
-    roomID : "",
-    databaseID : "",
-    player1Name : "",
-    player2Name : "",
-    totalRounds : "",
+const timeToAddFunction = require("../public/scripts/extraTimeAdderFunction");
+
+const getSecondFunction = require("../public/scripts/getSecondFunction");
+
+let sharedState = {
+    databaseID : null
 }
+
+let stTime = 0;
 
 router.post("/player-name-page", (req, res) => {
     res.render("player-name-page");
@@ -32,24 +34,20 @@ router.post("/player-waiting-page", async(req,res)=>{
         player2Move : "empty",
         player1Score : 0,
         player2Score: 0,
-        currRound : 0,
+        currRound : 1,
         totalRound : parseInt(req.body.noRounds, 10),
         gameStart:"no",
     })
     await currGame.save().then(savedGame =>{
-        allDetails.databaseID = savedGame._id;
-        allDetails.roomID = savedGame.roomID;
-        allDetails.player1Name = savedGame.player1Name;
-        allDetails.totalRounds = savedGame.totalRound;
+        sharedState.databaseID = savedGame._id;
     }).then(()=>{
         res.render("player-waiting-page");
     })
 })
 
 router.get("/render/player-waiting-page",async (req,res)=>{
-    const currGame = await Game.findById(allDetails.databaseID).then((savedGame)=>{
-        const playerName = [allDetails.player1Name];
-        allDetails.roomID = savedGame.roomID;
+    const currGame = await Game.findById(sharedState.databaseID).then((savedGame)=>{
+        const playerName = [savedGame.player1Name];
         res.render("player-waiting-page",{ 
             "RoomID" : savedGame.roomID,
             "playerName" : playerName,
@@ -59,23 +57,34 @@ router.get("/render/player-waiting-page",async (req,res)=>{
     })
 })
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+let flag = true;
 router.get("/searching-player",async(req,res)=>{
-    const currGame = await Game.findById(allDetails.databaseID).then((savedGame)=>{
+    if(flag){
+        stTime = getSecondFunction();
+        flag = false;
+    }
+    const currGame = await Game.findById(sharedState.databaseID).then( async(savedGame) => {
         //404 -> player not found
         //200 -> player found
-        allDetails.player2Name = savedGame.player2Name;
-        if(allDetails.player2Name == undefined){
+        if(savedGame.player2Name == undefined){
             res.sendStatus(404);
+            stTime = getSecondFunction();
         }else{
+            await delay(5000-((getSecondFunction()-stTime)*1000));
             res.sendStatus(200);
         }
     })
 })
 
-router.get("/render/playerFound/player-waiting-page",(req,res)=>{
-    const playerName = [allDetails.player1Name,allDetails.player2Name];
+router.get("/render/playerFound/player-waiting-page",async (req,res)=>{
+    const currGame = await Game.findById(sharedState.databaseID)
+    console.log("player 1 time")
+    console.log(getSecondFunction());
+    const playerName = [currGame.player1Name,currGame.player2Name];
     res.render("player-waiting-page",{ 
-        "RoomID" : allDetails.roomID,
+        "RoomID" : currGame.roomID,
         "playerName" : playerName,
         "loaderFlag" : false,
         "startButtonFlag":true
@@ -84,4 +93,4 @@ router.get("/render/playerFound/player-waiting-page",(req,res)=>{
 
 
 
-module.exports = {router,allDetails};
+module.exports = {router,sharedState};

@@ -86,7 +86,6 @@
             })
             .then((response) => {
                 if (response.status === 200) {
-                    // Clear the interval and redirect to the player move page
                     clearInterval(); // Pass the interval ID
                     window.location.href = "/player2/render/player-move-page";
                 }
@@ -104,6 +103,9 @@
                 }
                 })
                 .then(response=>{
+                    document.getElementById("loader-text").innerHTML="Game Starting...!";
+                    button.style.visibility = "hidden";
+                    loader_container.style.visibility="visible";
                     window.location.href="/player1/render/player-move-page";
                 })
         })

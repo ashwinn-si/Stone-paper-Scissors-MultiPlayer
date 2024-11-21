@@ -8,130 +8,123 @@ const resultFinder = require("../public/scripts/resultFinder");
 
 const resultTextFinder = require("../public/scripts/resultMessageFinder");
 
-const {noneed_router:router1 , allDetails} = require("./createRoomRoutes")
+const getSecondFunction = require("../public/scripts/getSecondFunction");
+
+const { sharedState } = require("./createRoomRoutes");
 
 let winnerName = "";
 let gameEndedFlag = false;
-
-allDetails.player1Score=0;
-allDetails.player2Score =0;
-allDetails.currRound = 1;
-allDetails.player1Status="empty";
-allDetails.player2Status="empty";
+let delayFlag = true;
+let player1Status = "";
 
 
 router.post("/player-move-page",async(req,res)=>{
-    await Game.findByIdAndUpdate(allDetails.databaseID,{
-        gameStart:"yes"
-    })
-    const currGame = await Game.findByIdAndUpdate(allDetails.databaseID,{
-        player1Score:allDetails.player1Score,
-        player2Score :allDetails.player2Score,
-        currRound :allDetails.currRound,
-    })
+    await Game.findByIdAndUpdate(sharedState.databaseID,{ 
+        gameStart: "yes"
+    }
+    );
+    currGame = Game.findById(sharedState.databaseID);
     res.render("move-selection-page",{
-        player_1_name:allDetails.player1Name,
-        player_2_name:allDetails.player2Name,
-        player_1_score:allDetails.player1Score,
-        player_2_score:allDetails.player2Score,
-        curr_round:allDetails.currRound,
+        player_1_name:currGame.player1Name,
+        player_2_name:currGame.player2Name,
+        player_1_score:currGame.player1Score,
+        player_2_score:currGame.player2Score,
+        curr_round:currGame.currRound,
         player1Flag:true
-    })
-})
-
-router.get("/render/player-move-page",(req,res)=>{
-    res.render("move-selection-page",{
-        player_1_name:allDetails.player1Name,
-        player_2_name:allDetails.player2Name,
-        player_1_score:allDetails.player1Score,
-        player_2_score:allDetails.player2Score,
-        curr_round:allDetails.currRound,
-        player1Flag:true  
     })
 })
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+router.get("/render/player-move-page",async (req,res)=>{
+    if(delayFlag){
+        await delay(4000);
+        delayFlag= false;
+    }
+    let currGame = await Game.findById(sharedState.databaseID);
+    res.render("move-selection-page",{
+        player_1_name:currGame.player1Name,
+        player_2_name:currGame.player2Name,
+        player_1_score:currGame.player1Score,
+        player_2_score:currGame.player2Score,
+        curr_round:currGame.currRound,
+        player1Flag:true  
+    })
+})
+
+
 router.post("/player-move-sender", async (req, res) => {
     // Update player1's move in the database
-    let currGame = await Game.findByIdAndUpdate(allDetails.databaseID, {
+    let currGame = await Game.findByIdAndUpdate(sharedState.databaseID, {
         player1Move: req.body.player1Move,
     });
-    allDetails.player1Move = req.body.player1Move;
-    // Wait for 1 m-second before processing
 
-    await delay(5000);
-
+    await delay(3000);
     // Fetch the updated game details
-    currGame = await Game.findById(allDetails.databaseID);
-
-    if (!currGame) {
-        return res.status(404).send("Game not found");
-    }
-
-    allDetails.player2Move = currGame.player2Move;
-    allDetails.player1Score = currGame.player1Score;
-    allDetails.player2Score = currGame.player2Score;
-    while(allDetails.player2Move === "empty"){
-        currGame = await Game.findById(allDetails.databaseID);
-        allDetails.player2Name = currGame.player2Move;
-    }
+    currGame = await Game.findById(sharedState.databaseID);
 
     // Determine the result for player1
-    allDetails.player1Status = await resultFinder(currGame.player1Move, currGame.player2Move);
+    player1Status = await resultFinder(currGame.player1Move, currGame.player2Move);
 
     // Update scores based on the result
-    if (allDetails.player1Status === "win") {
-        allDetails.player1Score++;
-    }else if(allDetails.player1Status === "loss"){
-        allDetails.player2Score++;
+    if (player1Status === "win") {
+        await Game.findByIdAndUpdate(sharedState.databaseID,{
+            player1Score : currGame.player1Score+1
+        })
+    }else if(player1Status === "loss"){
+        await Game.findByIdAndUpdate(sharedState.databaseID,{
+            player2Score : currGame.player2Score+1
+        })
     }
-    // Increment the current round
-    allDetails.currRound++;
+
+    currGame = await Game.findById(sharedState.databaseID);
 
     // Generate the result text
-    const result_text = resultTextFinder(allDetails.player1Status, allDetails.player1Name, allDetails.player2Name);
+    const result_text = await resultTextFinder(player1Status, currGame.player1Name, currGame.player2Name);
 
-
-    if(allDetails.player2Score == allDetails.totalRounds){
-        winnerName = allDetails.player2Name;
+    if(currGame.player2Score == currGame.totalRounds){
+        winnerName = currGame.player2Name;
+        console.log("hello");
         gameEndedFlag = true;
-    }else if(allDetails.player1Score == allDetails.totalRounds){
+    }else if(currGame.player1Score == currGame.totalRounds){
         gameEndedFlag=true;
-        winnerName = allDetails.player1Name;
+        winnerName = currGame.player1Name;
     }
 
     // Render the updated page
     res.render("player-move-display-page", {
-        your_name: allDetails.player1Name,
-        opp_name: allDetails.player2Name,
-        your_score: allDetails.player1Score,
-        opp_score: allDetails.player2Score,
-        your_move: allDetails.player1Move,
-        opp_move: allDetails.player2Move,
-        result_text:allDetails.player1Status,
+        your_name:  currGame.player1Name,
+        opp_name:  currGame.player2Name,
+        your_score:  currGame.player1Score,
+        opp_score:  currGame.player2Score,
+        your_move:  currGame.player1Move,
+        opp_move:  currGame.player2Move,
+        result_text: player1Status,
         winner_text: result_text,
         player1Flag: true,
         GameEndedFlag:gameEndedFlag,
     });
+
 });
 
 
-router.get("/render/player-move-display-page",(req,res)=>{
-    let result_text = resultTextFinder(allDetails.player1Status,allDetails.player1Name,allDetails.player2Name);
+router.get("/render/player-move-display-page",async (req,res)=>{
+    const currGame = await Game.findById(sharedState.databaseID);
 
-    res.render("player-move-display-page",{
-        your_name:allDetails.player1Name,
-        opp_name:allDetails.player2Name,
-        your_score:allDetails.player1Score,
-        opp_score:allDetails.player2Score,
-        your_move : allDetails.player1Move,
-        opp_move:allDetails.player2Move,
-        winner_text:result_text,
-        result_text:allDetails.player1Status,
-        player1Flag:true,
+    const result_text = await resultTextFinder(player1Status, currGame.player1Name, currGame.player2Name);
+    
+    res.render("player-move-display-page", {
+        your_name:  currGame.player1Name,
+        opp_name:  currGame.player2Name,
+        your_score:  currGame.player1Score,
+        opp_score:  currGame.player2Score,
+        your_move:  currGame.player1Move,
+        opp_move:  currGame.player2Move,
+        result_text: player1Status,
+        winner_text: result_text,
+        player1Flag: true,
         GameEndedFlag:gameEndedFlag,
-    })
+    });
 })
 
 router.get("/render/game-ended",async(req,res)=>{
@@ -142,7 +135,7 @@ router.get("/render/game-ended",async(req,res)=>{
     allDetails.player1Status="empty";
     allDetails.player2Status="empty";
     gameEndedFlag=false;
-    await Game.findByIdAndUpdate(allDetails.databaseID,{
+    await Game.findByIdAndUpdate(sharedState.databaseID,{
         roomID:0
     })
 

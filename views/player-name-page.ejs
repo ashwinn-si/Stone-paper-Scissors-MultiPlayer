@@ -36,8 +36,16 @@
         <!--TODO ERROR HANDLING FOR NAME-->
         document.getElementById("button").addEventListener('click',()=>{
             const name = document.getElementById("name").value;
+            if (!name) {
+                alert("Please enter your name."); 
+                return;
+            }   
             if(buttonData.content ==='Create'){
                 const noRounds = parseInt(document.getElementById("rounds").value);
+                if (buttonData.content === 'Create' && (!noRounds || noRounds <= 0)) {
+                    alert("Please enter a valid number of rounds."); 
+                    return;
+                }
                 fetch(buttonData.location, {
                     method: 'POST',
                     headers: {

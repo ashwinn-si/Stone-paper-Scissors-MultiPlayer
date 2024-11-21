@@ -128,17 +128,8 @@
                 return "purple"
             }
         }
+
         //backend functions
-        function player1Backend(){
-            fetch("player1/player-move-page",{
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then((Response)=>{
-                window.location.href="player1/render/player-move-page"
-            })
-        }
         function player1Backend(){
             fetch("/player1/player-move-page",{
                 method: 'POST',
@@ -150,32 +141,26 @@
             })
         }
         function player2Backend(){
-            //delaying the player 2 again by 500ms 
-            setTimeout(()=>{
-                window.location.href="/player2/render/player-move-page"
-            },5000);
+            window.location.href="/player2/render/player-move-page"
         }
 
         
         // Timer function
-        let time = 10;
+        let time = 9;
         const timerElement = document.getElementById("timer");
 
         const countdown = setInterval(() => {
             timerElement.textContent = time;
             time--;
-            if(time==5){
+            if(time==0){
+                clearInterval(countdown);
+                timerElement.textContent = "Time's up!";
+                timerElement.style.color = "tomato";
                 if(player1Flag==="true"){
                     player1Backend();
                 }else{
                     player2Backend();
                 }
-            }
-            if (time < 0) {
-                clearInterval(countdown);
-                timerElement.textContent = "Time's up!";
-                timerElement.style.color = "tomato"; 
-                
             }
         }, 1000);
     </script>

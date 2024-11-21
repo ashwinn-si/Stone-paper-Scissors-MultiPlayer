@@ -5,9 +5,6 @@ const {router:joinRoomRoutes , allDetails2} = require("./routes/joinRoomRoutes")
 const player1Routers = require("./routes/player1Routes");
 const player2Routers = require("./routes/player2Routes");
 const path = require("path");
-const PORT = process.env.PORT || 10000;
-
-
 
 let dbID = 0;
 let playerName ="";
@@ -37,6 +34,6 @@ app.get("/return-home",(req,res)=>{
     res.render("create-join-room-page")
 })
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
+app.listen(3000, () => {
+    console.log("Server Started");
 });
