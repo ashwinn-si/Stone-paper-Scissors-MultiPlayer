@@ -62,17 +62,20 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let flag = true;
 router.get("/searching-player",async(req,res)=>{
     if(flag){
+        console.log("player 1 searching st time :   ",getSecondFunction());
         stTime = getSecondFunction();
         flag = false;
     }
     const currGame = await Game.findById(sharedState.databaseID).then( async(savedGame) => {
         //404 -> player not found
         //200 -> player found
-        if(savedGame.player2Name == undefined){
+        if(savedGame.player2Name == undefined){// player2 not found
             res.sendStatus(404);
             stTime = getSecondFunction();
         }else{
-            await delay(5000-((getSecondFunction()-stTime)*1000));
+            console.log("player 1 find time : ",getSecondFunction());
+            console.log("player 1 delay time : ",timeToAddFunction(getSecondFunction(),stTime));
+            await delay(5000-(timeToAddFunction(getSecondFunction(),stTime)));
             res.sendStatus(200);
         }
     })

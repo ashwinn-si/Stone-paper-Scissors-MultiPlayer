@@ -12,7 +12,7 @@ function calculateTimeToAdd(st, end) {
     }
 
     // Calculate how much to add to make the difference 5
-    const timeToAdd = (5 - diff + 60) % 60;
+    const timeToAdd = ((5 - diff + 60) % 60);
     return timeToAdd*1000;
 }
 module.exports= calculateTimeToAdd;

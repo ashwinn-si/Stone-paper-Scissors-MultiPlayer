@@ -53,7 +53,7 @@ router.post("/room-id-check", async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(sharedState.databaseID)) {
             return res.status(400).json({ error: "Invalid sharedState.databaseID" });
         }
-
+        console.log("player 2 enter time :   ",getSecondFunction());
         await Game.findByIdAndUpdate(sharedState.databaseID, { player2Name: player2Name });
         res.status(200).json({ redirectTo: "/joinRoom/render/player-waiting-page" });
     } else {
@@ -64,8 +64,6 @@ router.post("/room-id-check", async (req, res) => {
 router.get("/render/player-waiting-page", async(req, res) => {
     const currGame = await Game.findById(sharedState.databaseID);
     const playerName = [currGame.player2Name, currGame.player1Name];
-    console.log("player 2 time")
-    console.log(getSecondFunction())
     res.render("player-waiting-page", {
         RoomID: currGame.roomID,
         playerName: playerName,
@@ -76,13 +74,10 @@ router.get("/render/player-waiting-page", async(req, res) => {
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+
 router.get("/game-start-check", async (req, res) => {
-    let flag = true;
     if(stTime == null){
-        console.log("start game function")
-        console.log(getSecondFunction());
         stTime = getSecondFunction();
-        flag = false;
     }
     const savedGame = await Game.findById(sharedState.databaseID);
 
@@ -90,15 +85,10 @@ router.get("/game-start-check", async (req, res) => {
         stTime = getSecondFunction();
         return res.status(404).json({ error: "Game has not started" });
         
-    }
-    if(flag){
-        
-        await delay(5000-timeToAddFunction(stTime));
-        console.log(getSecondFunction());
-        res.status(200).json({ success: true, message: "Game has started" });
-    }
-    
-    
+    }   
+    await delay(5000-timeToAddFunction(getSecondFunction(),stTime));
+
+    res.status(200).json({ success: true, message: "Game has started" });
 });
 
 module.exports = {router,sharedState};
